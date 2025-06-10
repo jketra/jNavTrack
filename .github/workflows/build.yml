@@ -9,42 +9,38 @@ on:
 
 jobs:
   build-linux:
-    name: Build on Linux (Ubuntu)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg cmake build-essential
-          wget https://download.qt.io/official_releases/qt/6.5/6.5.8/qt-opensource-linux-x64-6.5.8.run -O qt-installer.run
-          chmod +x qt-installer.run
-          ./qt-installer.run --platform minimal --verbose --script install-qt-noninteractive.qs || true
+      - name: Install Qt 6.5.8
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.8
+          target: desktop
+          arch: gcc_64            # для Linux
+          cache: true
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --config Release
 
   build-windows:
-    name: Build on Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Qt (manual setup for 6.5.8)
-        run: |
-          Invoke-WebRequest -Uri "https://download.qt.io/official_releases/qt/6.5/6.5.8/qt-opensource-windows-x86-64-6.5.8.exe" -OutFile "qt-installer.exe"
-
-      - name: Set Qt environment (customize if installed manually)
-        run: |
-          echo "QT_DIR=C:\Qt\6.5.8\msvc2019_64" >> $env:GITHUB_ENV
-          echo "$env:QT_DIR\bin" | Out-File -Append -Encoding ASCII $env:GITHUB_PATH
+      - name: Install Qt 6.5.8
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.8
+          arch: win64_msvc2019_64
+          cache: true
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${env:QT_DIR}"
+        run: cmake -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%Qt6_DIR%"
 
       - name: Build
         run: cmake --build build --config Release

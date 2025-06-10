@@ -1,20 +1,45 @@
-name: Build with CMake
+name: Build JNavTrack
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  push:          { branches: [ master ] }
+  pull_request:  { branches: [ master ] }
   workflow_dispatch:
 
 jobs:
-  build:
+  linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Install Qt and dependencies
-      run: sudo apt-get update && sudo apt-get install qt6-base-dev cmake -y
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-    - name: Build
-      run: cmake --build build
+      - uses: actions/checkout@v3
+
+      # ➊ Ставим Qt 6.5.8
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.8
+          arch: gcc_64          # Linux desktop
+          cache: true           # ускоряем повторные сборки
+
+      # ➋ CMake + Ninja (быстрее make)
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # ➊ Qt 6.5.8 MSVC 2019
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.5.8
+          arch: win64_msvc2019_64
+          cache: true
+
+      # ➋ CMake (MSVC)
+      - name: Configure
+        run: cmake -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_PREFIX_PATH="%Qt6_DIR%"
+      - name: Build
